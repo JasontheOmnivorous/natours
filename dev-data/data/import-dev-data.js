@@ -40,7 +40,7 @@ const deleteData = async () => {
     } catch (err) {
         console.log(err);
     }
-    process.exit(); 
+    process.exit();
 }
 
 
@@ -53,4 +53,4 @@ if (process.argv[2] === '--import') {
 
 // // this guy log out the command line arguments in a form of array of strings
 // // the array contains the directories of the arguments in string form, including node.js's itself
-// console.log(process.argv);   
+// console.log(process.argv);
