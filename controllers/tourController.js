@@ -164,8 +164,8 @@ exports.getTourStats = async (req, res) => {
             },
             {
                 $sort: {
-                    // we need to use the key names from the group stage because we're going through this pipeline step by step
-                    averagePrice: 1 // sort by averagePrice in 1 (ascending order)
+                    // we need to use the key names from the previous stage because we're going through this pipeline step by step
+                    averagePrice: 1 // sort by averagePrice in 1 (ascending order), -1 for descending
                 }
             },
             // {
@@ -181,6 +181,62 @@ exports.getTourStats = async (req, res) => {
             status: "success",
             data: {
                 stats // send the aggregated data
+            }
+        })
+    } catch (err) {
+        res.status(400).json({
+            status: "fail",
+            message: "Invalid data sent."
+        })    
+    }
+}
+
+// business logic to calculate which month of the year is the busiest
+exports.getMonthlyPlan = async (req, res) => {
+    try {
+        const year = req.params.year * 1;
+        const plans = await Tour.aggregate([
+            {
+                $unwind: '$startDates' // deconstruct the startDates array, creating a seperate document for each date
+            },
+            {
+                // filter out only the documents fall under the given year range
+                $match: {
+                    startDates: { 
+                        $gte: new Date(`${year}-01-01`),
+                        $lte: new Date(`${year}-12-31`)
+                     }
+                }
+            },
+            // group the data based on the months, show how much tour will start that month and show the tour names
+            {
+                $group: {
+                    _id: { $month: `$startDates` },
+                    numTourStarts: { $sum: 1 },
+                    tours: { $push: '$name' }
+                }
+            },
+            {
+                $addFields: { month: '$_id' } // add a field called month with the value of id
+            },
+            {
+                $project: {
+                    // 0 to hide, 1 to show in project
+                    _id: 0 // hide the _id, so that users can only see which month this is and easy to use
+                }
+            },
+            {
+                $sort: { numTourStarts: -1 } // sort groups by numTourStarts in descending order
+            },
+            {
+                $limit: 12 // limit the documents to show at a time
+            }
+        ]);
+
+        res.status(200).json({
+            status: "success",
+            data: {
+                plans // send the aggregated data
             }
         })
     } catch (err) {

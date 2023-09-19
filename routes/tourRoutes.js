@@ -1,6 +1,6 @@
 const express = require('express');
 // exports.TourController.controllers => object destructuring
-const {getAllTours, createTour, getTour, updateTour, deleteTour, aliasTopTours, getTourStats} = require('./../controllers/tourController');
+const {getAllTours, createTour, getTour, updateTour, deleteTour, aliasTopTours, getTourStats, getMonthlyPlan} = require('./../controllers/tourController');
 const router = express.Router(); // create mount router for tours
 
 // // param middleware => a middleware that only runs for certain parameter in the URL
@@ -13,8 +13,12 @@ router
 .get(aliasTopTours, getAllTours); // route for aliasing
 
 router
-.route('/tour-stats')
+.route('/stats')
 .get(getTourStats); // route for aggregation
+
+router
+.route('/monthly-plan/:year')
+.get(getMonthlyPlan);
 
 router
    .route('/') // we only need to specify needed routes because the mounting route already got the root path

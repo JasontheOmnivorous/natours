@@ -10,6 +10,8 @@ const app = express(); // activate express
 // only log the morgan stuffs when our enviornment is development
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
+
+
 // this guy is what the request goes through while it's processing
 app.use(express.json()); // this middleware is responsible for parsing the data from the req object into JSON
 
