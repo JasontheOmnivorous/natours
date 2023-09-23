@@ -1,6 +1,6 @@
 const express = require('express');
 // exports.TourController.controllers => object destructuring
-const {getAllTours, createTour, getTour, updateTour, deleteTour, aliasTopTours, getTourStats, getMonthlyPlan} = require('./../controllers/tourController');
+const {getAllTours, createTour, getTour, updateTour, deleteTour, aliasTopTours, getTourStats, getMonthlyPlan, getSlug} = require('./../controllers/tourController');
 const router = express.Router(); // create mount router for tours
 
 // // param middleware => a middleware that only runs for certain parameter in the URL
@@ -11,6 +11,10 @@ const router = express.Router(); // create mount router for tours
 router 
 .route('/top-5-cheap')
 .get(aliasTopTours, getAllTours); // route for aliasing
+
+// router
+// .route('/:slug')
+// .get(getSlug)
 
 router
 .route('/stats')
