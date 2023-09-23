@@ -58,6 +58,7 @@ exports.getAllTours = async (req, res) => {
         }
     });
     } catch (err) {
+        console.log(err);
         res.status(404).json({
             status: "fail",
             message: err
@@ -246,3 +247,22 @@ exports.getMonthlyPlan = async (req, res) => {
         })    
     }
 }
+
+// exports.getSlug = async (req, res) => {
+//     try {
+//         const slug = req.params.slug;
+//         const slugTour = await Tour.find({ slug: slug});
+
+//         res.status(200).json({
+//             status: "success",
+//             data: {
+//                 slugTour // send the aggregated data
+//             }
+//         })
+//     } catch (err) {
+//         res.status(400).json({
+//             status: "fail",
+//             message: "Invalid data sent."
+//         })    
+//     }
+// }

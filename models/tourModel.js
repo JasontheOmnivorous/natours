@@ -1,4 +1,10 @@
+/*
+fat models, thin controllers => Offload as much business logic as possible to models and use as little business logic
+as possible in controllers, because we want to seperate application logic and business logic as much as we can.
+*/
+
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 // schema is like a set of rules defined to create our model, which will act as blue print to build our documents
 // schema (set of rules) => model (blue print to build a document) => document (actual data structure)
@@ -11,6 +17,7 @@ const tourSchema = new mongoose.Schema({
         unique: true, // the name has to be a unique value,
         trim: true // trims the whitespaces in the beginning and ending of summery input
     },
+    slug: String,
     duration: {
         type: Number,
         required: [true, "A tour must have a duration."]
@@ -57,7 +64,71 @@ const tourSchema = new mongoose.Schema({
         select: false // hide create date
     },
     // different start dates for the same tour
-    startDates: [Date]
+    startDates: [Date],
+    secretTour: {
+        type: Boolean,
+        default: false
+    }
+}, {
+    // schema option to show virtual properties when the model is in the form of JSON or object
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+// virtual properties
+// we can use various calculations for the schema using virtual properties
+// NOTE: we can't use virtual properties in querying, because technically, they're not real fields in the document
+// They are only used for the user experience
+tourSchema.virtual('durationWeeks').get(function () {
+    return this.duration / 7; // calculate duration in weeks
+});
+
+// MongoDB Document middleware that runs before .save() and .create()
+// pre save hook
+tourSchema.pre('save', function(next) {
+    this.slug = slugify(this.name, { lower: true }); // slugify and shows the document's name
+    console.log(this.slug);
+    next();
+});
+
+// // demo of document middleware pipeline
+// tourSchema.pre('save', function(next) {
+//     console.log('will save document');
+//     next();
+// });
+
+// // post save hook
+// // this guy get access to previously saved document and next function
+// // this will run only after all the pre hooks are done running
+// tourSchema.post('save', function(doc, next) {
+//     console.log(doc);
+//     next();
+// });
+
+// MongoDB Query Middlware
+// pre find hook
+// use pre find hook to not show secret tours before saving to the DB
+// use regex to make sure the middleware is working for both find and findOne queries
+// ^find literally means all the queries start with find
+tourSchema.pre(/^find/, function(next) {
+    this.find({ secretTour: { $ne: true } }); // only shows non-secret tours
+    this.start = Date.now();
+    next();
+});
+
+// post find hook gets access to all the documents after the query has executed
+tourSchema.post(/^find/, function(docs, next) {
+    // calculate how long it takes to execute current query
+    console.log(`Query took ${Date.now() - this.start} milliseconds`); 
+    // console.log(docs);
+    next();
+});
+
+// MongoDB Aggregation Middleware
+tourSchema.pre('aggregate', function(next) {
+    // add another match to  filter out aggregated object pipeline method's secret tours
+    this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); 
+    next();
 });
 
 // create the model for the documents using specified schema rules
