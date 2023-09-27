@@ -2,6 +2,8 @@ const express = require('express');
 const morgan = require('morgan');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
 
 const app = express(); // activate express
 
@@ -41,6 +43,32 @@ app.use((req, res, next) => {
 // route mounts used as middlewares
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+
+// Handling non-existing routes
+/*
+Middlewares act like a pipeline so if the code execution reach to this line of code, 
+that means it's not handled by other route middlewares placed above.
+*/
+// route path for all http verbs
+// * for all routes that are not handled
+app.all('*', (req, res, next) => {
+    // res.status(404).json({
+    //     status: 'fail',
+    //     message: `Cannot find URL: ${req.originalUrl} on this server.` // message to remind user that the server can't find the Url user used
+    // });
+
+    // Error passing demo
+    // const err = new Error(`Cannot find URL: ${req.originalUrl} on this server.`);
+    // err.statusCode = 404;
+    // err.status = 'fail';
+
+    // whatever we pass inside next function's param, Express will automatically assume it's an error and pass it directly to global error handling middleware
+    next(new AppError(`Cannot find URL: ${req.originalUrl} on this server.`, 404));
+});
+
+// Global error handling middleware
+// err param has to be at the first place to inform Express this is global error handling middleware
+app.use(globalErrorHandler);
 
 // server
 module.exports = app;
