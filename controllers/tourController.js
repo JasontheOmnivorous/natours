@@ -1,6 +1,7 @@
 const { query } = require('express');
 const Tour = require('./../models/tourModel');
 const APIFeatures = require('./../utils/apiFeatures');
+const catchAsync = require('./../utils/catchAsync');
 
 exports.aliasTopTours = (req, res, next) => {
     // manipulate the query object in the middleware, so that it's already different when it reaches the getAllTours
@@ -38,8 +39,7 @@ exports.aliasTopTours = (req, res, next) => {
 
 // 2) route handlers/route controllers
 // refactor the code to be a bit cleaner
-exports.getAllTours = async (req, res) => { 
-    try {
+exports.getAllTours = catchAsync(async (req, res, next) => {
     // EXECUTE QUERY
     const features = new APIFeatures(Tour.find(), req.query)
     .filter()
@@ -57,17 +57,9 @@ exports.getAllTours = async (req, res) => {
             tours
         }
     });
-    } catch (err) {
-        console.log(err);
-        res.status(404).json({
-            status: "fail",
-            message: err
-        });
-    }
-}
+});
 
-exports.getTour = async (req, res) => {
-    try {
+exports.getTour = catchAsync(async (req, res, next) => {
         // findById method is the another more efficient way to query search with find method and filter object in it
         // Tour.findOne({ _id: req.params.id }) => findById(req.params.id)
         const tour = await Tour.findById(req.params.id);
@@ -78,16 +70,9 @@ exports.getTour = async (req, res) => {
                 tour
             }
          });
-    } catch (err) {
-        res.status(404).json({
-            status: "fail",
-            message: err
-        })
-    }
-}
+});
 
-exports.createTour = async (req, res) => {
-    try {
+exports.createTour = catchAsync(async (req, res, next) => {
     // create method saves the data into DB automatically
     const newTour = await Tour.create(req.body); // create new document using our model and request body
 
@@ -97,19 +82,12 @@ exports.createTour = async (req, res) => {
             tour: newTour
         }
     })
-    } catch (err) {
-    res.status(400).json({
-        status: "fail",
-        message: err
-    })
-    }
-}
+});
 
-exports.updateTour = async (req, res) => {
-    try {
+exports.updateTour = catchAsync(async (req, res, next) => {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
-        runValidators: true
+        runValidators: true // run validators
     });
     res.status(200).json({
         status: "success",
@@ -117,33 +95,19 @@ exports.updateTour = async (req, res) => {
             tour
         }
     })
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: "Invalid data sent."
-        })
-    }
-}
+});
 
-exports.deleteTour = async (req, res) => {
-    try {
+exports.deleteTour = catchAsync(async (req, res, next) => {
         await Tour.findByIdAndDelete(req.params.id);
         // 204 means no content
         res.status(204).json({
             status: "success",
             data: null
         })
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: "Invalid data sent."
-        })        
-    }
-}
+});
 
 // Aggregation pipelines hanndler function
-exports.getTourStats = async (req, res) => {
-    try {
+exports.getTourStats = catchAsync(async (req, res, next) => {
         // aggregation pipeline is a mongoDB native feature but mongoose abstract it and give access to us
         // all the documents will go through these stages in the array and final aggregated array will be released
         const stats = await Tour.aggregate([
@@ -184,17 +148,10 @@ exports.getTourStats = async (req, res) => {
                 stats // send the aggregated data
             }
         })
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: "Invalid data sent."
-        })    
-    }
-}
+});
 
 // business logic to calculate which month of the year is the busiest
-exports.getMonthlyPlan = async (req, res) => {
-    try {
+exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
         const year = req.params.year * 1;
         const plans = await Tour.aggregate([
             {
@@ -240,13 +197,7 @@ exports.getMonthlyPlan = async (req, res) => {
                 plans // send the aggregated data
             }
         })
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: "Invalid data sent."
-        })    
-    }
-}
+});
 
 // exports.getSlug = async (req, res) => {
 //     try {

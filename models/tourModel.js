@@ -5,6 +5,7 @@ as possible in controllers, because we want to seperate application logic and bu
 
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const { isAlpha } = require('validator');
 
 // schema is like a set of rules defined to create our model, which will act as blue print to build our documents
 // schema (set of rules) => model (blue print to build a document) => document (actual data structure)
@@ -15,7 +16,12 @@ const tourSchema = new mongoose.Schema({
         // required stuff is called validator, because it is used to validate our data 
         required: [true, "A tour must have a name."], // second element is error message to show up if we omit it
         unique: true, // the name has to be a unique value,
-        trim: true // trims the whitespaces in the beginning and ending of summery input
+        trim: true, // trims the whitespaces in the beginning and ending of summery input
+        // data validation
+        maxlength: [40, 'Tour name must be less than or equal to 40 characters.'],
+        minlength: [10, 'Tour name must be greater than or equal to 10 characters.'],
+        // this dude doesnt even allow spaces for the name so i'll leave it here just for demo of validator library
+        // validate: [isAlpha, 'Tour name must only contains alphabets.'] // method that validates if the input data are alphabets or not
     },
     slug: String,
     duration: {
@@ -28,11 +34,18 @@ const tourSchema = new mongoose.Schema({
     },
     difficulty : {
         type: String,
-        required: [true, "A tour should have a difficulty."]
+        required: [true, "A tour should have a difficulty."],
+        // validator for difficulty
+        enum: {
+            values: ['easy', 'medium', 'difficult'],
+            message: 'Difficulty has to be either easy, medium or difficult.'
+        }
     },
     ratingsAverage: {
         type: Number,
-        default: 4.5 // default value to show if we didn't specify the rating
+        default: 4.5, // default value to show if we didn't specify the rating
+        min: [1, 'Rating must be above 1.0'],
+        max: [5, 'Rating must be below 5.0']
     },
     ratingsQuantity : {
         type: Number,
@@ -42,7 +55,18 @@ const tourSchema = new mongoose.Schema({
         type: Number,
         required: [true, "A tour must have a price."]
     },
-    priceDiscount: Number,
+    priceDiscount: {
+        type: Number,
+        // custom validator
+        validate: {
+            validator: function(val) {
+                // return bool if the value we give as priceDiscount is less than actual price or not
+                // important to note that in this case, "this" keyword only refers to the created object, which means this validation is not gonna work for updating
+                return val < this.price; // of course it's gonna show error if the return value is false
+            },
+            message: 'Discount price ({VALUE}) must be less than regular price.' // ({VALUE}) is the placeholder for actual input discounr val
+        }
+    },
     summary: {
         type: String,
         trim: true, 
