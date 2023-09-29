@@ -18,8 +18,8 @@ const tourSchema = new mongoose.Schema({
         unique: true, // the name has to be a unique value,
         trim: true, // trims the whitespaces in the beginning and ending of summery input
         // data validation
-        maxlength: [40, 'Tour name must be less than or equal to 40 characters.'],
-        minlength: [10, 'Tour name must be greater than or equal to 10 characters.'],
+        maxlength: [40, 'Tour name must be shorter than or equal to 40 characters.'],
+        minlength: [10, 'Tour name must be longer than or equal to 10 characters.'],
         // this dude doesnt even allow spaces for the name so i'll leave it here just for demo of validator library
         // validate: [isAlpha, 'Tour name must only contains alphabets.'] // method that validates if the input data are alphabets or not
     },
