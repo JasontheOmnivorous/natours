@@ -2,6 +2,7 @@ const { query } = require('express');
 const Tour = require('./../models/tourModel');
 const APIFeatures = require('./../utils/apiFeatures');
 const catchAsync = require('./../utils/catchAsync');
+const AppError = require('./../utils/appError');
 
 exports.aliasTopTours = (req, res, next) => {
     // manipulate the query object in the middleware, so that it's already different when it reaches the getAllTours
@@ -52,7 +53,7 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: "success",
         requestedAt: req.requestTime, // use the data pass through middleware stack or pipeline
-        results: tours.length,
+        totalTours: tours.length,
         data: {
             tours
         }
@@ -63,6 +64,11 @@ exports.getTour = catchAsync(async (req, res, next) => {
         // findById method is the another more efficient way to query search with find method and filter object in it
         // Tour.findOne({ _id: req.params.id }) => findById(req.params.id)
         const tour = await Tour.findById(req.params.id);
+
+        if (!tour) {
+            // used return to avoid running codes below and send inappropriate messages
+            return next(new AppError('No tours found with that ID.', 404));
+        }
 
         res.status(200).json({
             status: "success",
@@ -89,6 +95,12 @@ exports.updateTour = catchAsync(async (req, res, next) => {
         new: true,
         runValidators: true // run validators
     });
+
+    if (!tour) {
+        // used return to avoid running codes below and send inappropriate messages
+        return next(new AppError('No tours found with that ID.', 404));
+    }
+
     res.status(200).json({
         status: "success",
         data: {
@@ -98,7 +110,13 @@ exports.updateTour = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteTour = catchAsync(async (req, res, next) => {
-        await Tour.findByIdAndDelete(req.params.id);
+        const tour = await Tour.findByIdAndDelete(req.params.id);
+
+        if (!tour) {
+            // used return to avoid running codes below and send inappropriate messages
+            return next(new AppError('No tours found with that ID.', 404));
+        }
+
         // 204 means no content
         res.status(204).json({
             status: "success",
