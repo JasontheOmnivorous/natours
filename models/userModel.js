@@ -20,7 +20,8 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Password required.'],
-        minlength: [8, 'Passoword should have at least 8 characters.']
+        minlength: [10, 'Passoword should have at least 8 characters.'],
+        select: false // should hide the password eventhough we encrypted it
     },
     passwordConfirm: {
         type: String,
@@ -45,6 +46,13 @@ userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, 12);
     this.passwordConfirm = undefined; // delete the confirmed password after hashing the actual pasword
     next();
-})
+});
+
+// Instance method
+userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
+    // we can't use this to point the current document because we've already hid it with select: false
+    // bcrypt will calculate and compare these two if they are the same, regardless of they're hash or not
+    return await bcrypt.compare(candidatePassword, userPassword);
+}
 
 module.exports = mongoose.model('User', userSchema);
