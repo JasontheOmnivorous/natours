@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Email required.'],
         unique: [true, 'Email must be unique.'],
-        lowercase: true,
+        lowercase: true, // convert the input email to all lowercase
         validate: [validator.isEmail, 'Please provide a valida email.']
     },
     photo: String,
@@ -33,7 +33,8 @@ const userSchema = new mongoose.Schema({
             },
             message: 'Passwords are not the same.'
         }
-    }
+    },
+    passwordChangedAt: Date // if this property exists, then the user has changed the password
 });
 
 // password encryption using bcrypt algorithm and mongoDB pre save hook
@@ -53,6 +54,17 @@ userSchema.methods.correctPassword = async function (candidatePassword, userPass
     // we can't use this to point the current document because we've already hid it with select: false
     // bcrypt will calculate and compare these two if they are the same, regardless of they're hash or not
     return await bcrypt.compare(candidatePassword, userPassword);
+}
+
+userSchema.methods.passwordChangedAfter = function (JWTTimestamp) {
+    if (this.passwordChangedAt) {
+        // parse passwordChangedAt into seconds form
+        // divide with 1000 because getTime give us milliseconds
+        const changedTimeStamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10); // avoid floats using parseInt and base 10 arg
+        return JWTTimestamp < changedTimeStamp; // JWT issued at time must be less than password changed time 
+    }
+
+    return false; // false by default (never changed password)
 }
 
 module.exports = mongoose.model('User', userSchema);

@@ -1,6 +1,7 @@
 const express = require('express');
 // exports.TourController.controllers => object destructuring
 const {getAllTours, createTour, getTour, updateTour, deleteTour, aliasTopTours, getTourStats, getMonthlyPlan, getSlug} = require('./../controllers/tourController');
+const {protect} = require('./../controllers/authController');
 const router = express.Router(); // create mount router for tours
 
 // // param middleware => a middleware that only runs for certain parameter in the URL
@@ -26,7 +27,7 @@ router
 
 router
    .route('/') // we only need to specify needed routes because the mounting route already got the root path
-   .get(getAllTours)
+   .get(protect, getAllTours) // protect seeing all tours from unauthorized user
    .post(createTour); // can also chain HTTP verbs
 
 router
