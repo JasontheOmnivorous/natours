@@ -116,3 +116,23 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  // get user based on POSTed email
+  const user = await User.findOne({ email: req.body.email });
+
+  if (!user)
+    return next(new AppError('There is no user with this email.', 404));
+
+  // generate a random reset token
+  const resetToken = user.createPasswordResetToken();
+
+  // We need to call the save method for the database to persist the generated token and its expiration.
+  // The fields (passwordResetToken and passwordResetExpires) are modified inside the instance method,
+  // but these changes are in-memory. We need to call save method to persist them in the database.
+  // Deactivate all the validators in the schema to save the reset token in the database,
+  // as the changes made by the instance method may not adhere to schema validation rules.
+  await user.save({ validateBeforeSave: false });
+});
+
+exports.resetPassword = (req, res, next) => {};

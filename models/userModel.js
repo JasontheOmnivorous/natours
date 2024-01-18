@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -43,6 +44,8 @@ const userSchema = new mongoose.Schema({
     },
   },
   passwordChangedAt: Date, // if this property exists, then the user has changed the password
+  passwordResetToken: String, // pw reset token store here
+  passwordResetExpires: Date,
 });
 
 // password encryption using bcrypt algorithm and mongoDB pre save hook
@@ -79,6 +82,29 @@ userSchema.methods.passwordChangedAfter = function (JWTTimestamp) {
   }
 
   return false; // false by default (never changed password)
+};
+
+// generate password reset token with an instance method
+userSchema.methods.createPasswordResetToken = function () {
+  // specify number of characters for creating random bytes and convert it to hexadecimal string
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  // need to hash the reset token using crypto module
+  // because reset tokens are basically keys or passwords for the user to use
+  // and reset their password
+  // so, we dont wanna store them openly in the database
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  console.log({ resetToken }, this.passwordResetToken);
+
+  // specify reset token expiration period to 10 mins
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  // return the token because we need to send this guy to the user email
+  return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);
