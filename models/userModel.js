@@ -104,6 +104,8 @@ userSchema.methods.createPasswordResetToken = function () {
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 
   // return the token because we need to send this guy to the user email
+  // send the plain token which is not encrypted
+  // because we're gonna compare it with encrypted on in the database later
   return resetToken;
 };
 
