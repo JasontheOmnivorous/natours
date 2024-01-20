@@ -48,6 +48,21 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: Date,
 });
 
+userSchema.pre('save', function (next) {
+  // if the password is not changed or this is a new document, jump to the next middleware
+  if (!this.isModified('password') || this.isNew) return next();
+
+  // querying the database can take a lot longer rather than issuing a jwt token
+  // so basically what we're doing here is putting passwordChangedAt time one second in the past
+  // to make the passwordChangedAt time lesser or make it not greater than token issue time
+  // because remember? password cant be changed after logged in
+  // means passwordChangedAt cant be greater than token issue time
+  // so we're doing this to make reset password thing safe
+  // this may reduce the time accuracy but we can always add one second back when we need it
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
 // password encryption using bcrypt algorithm and mongoDB pre save hook
 userSchema.pre('save', async function (next) {
   // if the password is not modified, we dont wanna encrypt it again

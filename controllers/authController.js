@@ -5,6 +5,7 @@ require('dotenv').config({ path: './../config.env' });
 const AppError = require('./../utils/appError');
 const { promisify } = require('util');
 const sendEmail = require('./../utils/email');
+const cryptop = require('crypto');
 
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -119,13 +120,13 @@ exports.restrictTo = (...roles) => {
 };
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-  // get user based on POSTed email
+  // Get user based on POSTed email
   const user = await User.findOne({ email: req.body.email });
 
   if (!user)
     return next(new AppError('There is no user with this email.', 404));
 
-  // generate a random reset token
+  // Generate a random reset token
   const resetToken = user.createPasswordResetToken();
 
   // We need to call the save method for the database to persist the generated token and its expiration.
@@ -170,4 +171,39 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-exports.resetPassword = (req, res, next) => {};
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // Get user based on the token
+  // hash the original token that was sent with the url to compare with one in the database
+  const hashedToken = cryptop
+    .createHash('sha256')
+    .update(req.params.resetToken)
+    .digest('hex');
+
+  // find the user with the same token and which is not expired
+  // expiration > now => it's in the future (not expired yet)
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) return next(new AppError('Token is invalid or has expired!', 400));
+
+  // Change the password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  // we dont need to turn off validators saving the user data here
+  // because we wanna check if password and passwordConfirm are both there
+  // that's the whole point of writing all of this isnt it
+  await user.save();
+
+  // Log the user in after changing the password
+  const token = signToken(user._id);
+
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
