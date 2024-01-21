@@ -11,6 +11,8 @@ const {
   login,
   forgotPassword,
   resetPassword,
+  updatePassword,
+  protect,
 } = require('./../controllers/authController');
 // Routes
 const router = express.Router(); // create mount router for users
@@ -22,6 +24,8 @@ router.route('/login').post(login);
 
 router.route('/forgot-password').post(forgotPassword);
 router.route('/reset-password/:resetToken').patch(resetPassword);
+
+router.route('/update-my-password').patch(protect, updatePassword);
 
 router.route('/').get(getAllUsers).post(createUser);
 

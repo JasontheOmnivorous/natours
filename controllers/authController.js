@@ -13,6 +13,18 @@ const signToken = (id) => {
   });
 };
 
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user,
+    },
+  });
+};
+
 exports.signup = catchAsync(async (req, res, next) => {
   // store only necessary parts of the req.body for security reasons (prevent users to sign themselves as admin)
   const newUser = await User.create({
@@ -27,15 +39,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   // header (auto generated) + payload (first arg) + secret => signature
   // payload + header + signature => jwt (this process happens behind the scene)
   // third arg is option for token expiration
-  const token = signToken(newUser._id);
-
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  createSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -57,11 +61,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password.', 401));
   }
 
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  createSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -200,10 +200,32 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   // Log the user in after changing the password
-  const token = signToken(user._id);
+  createSendToken(user, 200, res);
+});
 
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+// update password for logged iun users
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // Get user from collection
+  // get user id from req.user which is provided by protect middleware
+  const dbUser = await User.findById(req.user._id).select('+password');
+
+  if (!dbUser)
+    return next(new AppError('Missing id or no user found with that id.', 400));
+
+  // Check if POSTed password is correct
+  const isCorrect = await dbUser.correctPassword(
+    req.body.passwordCurrent,
+    dbUser.password,
+  );
+
+  if (!isCorrect)
+    return next(new AppError('Your current password is wrong.', 401));
+
+  // If so, update the password
+  dbUser.password = req.body.password;
+  dbUser.passwordConfirm = req.body.passwordConfirm;
+  await dbUser.save();
+
+  // Log the user in
+  createSendToken(dbUser, 200, res);
 });
