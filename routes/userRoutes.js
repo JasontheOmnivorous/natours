@@ -5,6 +5,7 @@ const {
   getUser,
   updateUser,
   deleteUser,
+  updateMe,
 } = require('./../controllers/userController');
 const {
   signup,
@@ -14,6 +15,7 @@ const {
   updatePassword,
   protect,
 } = require('./../controllers/authController');
+const { updateMany } = require('../models/userModel');
 // Routes
 const router = express.Router(); // create mount router for users
 
@@ -26,6 +28,8 @@ router.route('/forgot-password').post(forgotPassword);
 router.route('/reset-password/:resetToken').patch(resetPassword);
 
 router.route('/update-my-password').patch(protect, updatePassword);
+
+router.route('/update-me').patch(protect, updateMe);
 
 router.route('/').get(getAllUsers).post(createUser);
 
