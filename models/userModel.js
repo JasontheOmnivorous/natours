@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date, // if this property exists, then the user has changed the password
   passwordResetToken: String, // pw reset token store here
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false, // we dont want anyone to know this status other than the user itself
+  },
 });
 
 userSchema.pre('save', function (next) {
@@ -72,6 +77,16 @@ userSchema.pre('save', async function (next) {
   // second arg is the measurement of CPU intensity to use in this operation
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined; // delete the confirmed password after hashing the actual pasword
+  next();
+});
+
+// apply this query middleware for the queries start with find
+userSchema.pre(/^find/, function (next) {
+  // only query documents that are not equal to false
+  // the reason we dont use active: true here is,
+  // there're other users who dont have explicitly active field in their data
+  // so using active: true will left out these guys
+  this.find({ active: { $ne: false } });
   next();
 });
 
