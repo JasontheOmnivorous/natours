@@ -4,6 +4,7 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const rateLimit = require('express-rate-limit');
 
 const app = express(); // activate express
 
@@ -11,6 +12,18 @@ const app = express(); // activate express
 // morgan third-party middleware provide request method, path, request time, etc.. to ease out developer life
 // only log the morgan stuffs when our enviornment is development
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
+
+// limit request rates from one IP to prevent server from breaking down
+// this will help us to prevent denial of service an attacks like brute force
+const limiter = rateLimit({
+  // only allow 100 requests from the same IP per hour
+  max: 100,
+  windowMilliseconds: 60 * 60 * 1000,
+  message: 'Too many requests from this IP, please try again in an hour.',
+});
+
+// apply the limiter only to api
+app.use('/api', limiter);
 
 // this guy is what the request goes through while it's processing
 app.use(express.json()); // this middleware is responsible for parsing the data from the req object into JSON
