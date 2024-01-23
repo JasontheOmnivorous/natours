@@ -16,6 +16,25 @@ const signToken = (id) => {
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
 
+  const cookieOptions = {
+    // cookie expires in 90 days from now
+    // multiply with 24 for days, 60 for hours and minutes, 1000 for milliseconds
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    // secure option is enabled so that cookie will be only sent over HTTPS connections
+    // so cookie will not be sent in local or dev environments
+    secure: process.env.NODE_ENV === 'production',
+    // httpOnly is enabled to prevent the cookie from being accessed or modified
+    // from malicious codes in the browser (for example cross site scripting attacks)
+    httpOnly: true,
+  };
+
+  // send token as a cookie along with response
+  res.cookie('jwt', token, cookieOptions);
+
+  user.password = undefined; // hide password after sending the cookie
+
   res.status(statusCode).json({
     status: 'success',
     token,
