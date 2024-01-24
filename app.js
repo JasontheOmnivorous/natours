@@ -5,10 +5,14 @@ const userRouter = require('./routes/userRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const app = express(); // activate express
 
 // 1) middlewares
+// set security http headers using helmet middleware
+app.use(helmet());
+
 // morgan third-party middleware provide request method, path, request time, etc.. to ease out developer life
 // only log the morgan stuffs when our enviornment is development
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
@@ -25,13 +29,20 @@ const limiter = rateLimit({
 // apply the limiter only to api
 app.use('/api', limiter);
 
+// body parser
 // this guy is what the request goes through while it's processing
-app.use(express.json()); // this middleware is responsible for parsing the data from the req object into JSON
+// this middleware is responsible for parsing the data from the req object into JSON
+app.use(
+  express.json({
+    // limit the amount of data that comes in request body to 10 kilobyte
+    limit: '10kb',
+  }),
+);
 
 // serve static files with a middlware
 // for example we want to search overview file from public folders, we dont need to search like 127.0.0.1:3000/public/overview.html
 // express actually map through the project and find the file you searched by providing the directory with express.static()
-// this guy only works for static files because obviously, it's name is static
+// this guy only works for static files obviously, it's name is static
 app.use(express.static(`${__dirname}/public`));
 
 // The middlewares work like a pipeline in express. We can also chain these guys using next function
