@@ -6,6 +6,8 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 
 const app = express(); // activate express
 
@@ -38,6 +40,18 @@ app.use(
     limit: '10kb',
   }),
 );
+
+// data sanitization againt noSQL query injection
+// noSQL injection is literally using noSQL queries as the field values like email
+// so this is enough protect those kinds of attacks
+// this guy will search for dollar signs and dots
+// in req.body, request query string and req.params and delete them
+// so no query can enter the app from those places
+app.use(mongoSanitize());
+
+// data sanitization against XSS (cross-site scripting attack
+// this guy can prevent malicious html and javascript injections
+app.use(xss());
 
 // serve static files with a middlware
 // for example we want to search overview file from public folders, we dont need to search like 127.0.0.1:3000/public/overview.html
