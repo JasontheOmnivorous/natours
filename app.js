@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+const hpp = require('hpp');
 
 const app = express(); // activate express
 
@@ -52,6 +53,25 @@ app.use(mongoSanitize());
 // data sanitization against XSS (cross-site scripting attack
 // this guy can prevent malicious html and javascript injections
 app.use(xss());
+
+// handle parameter polution
+// for example when the user use two sort fields in the param query,
+// that will cause an error because our sort feature is only designed
+// to handle once per one type of field
+// so using this will make the query to use only the last one of duplicate fields
+app.use(
+  hpp({
+    // we can allow duplication in parameter for some fields like this
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  }),
+);
 
 // serve static files with a middlware
 // for example we want to search overview file from public folders, we dont need to search like 127.0.0.1:3000/public/overview.html
