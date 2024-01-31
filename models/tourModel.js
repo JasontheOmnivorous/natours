@@ -5,7 +5,7 @@ as possible in controllers, because we want to seperate application logic and bu
 
 const mongoose = require('mongoose');
 const slugify = require('slugify');
-const { isAlpha } = require('validator');
+const User = require('./userModel');
 
 // schema is like a set of rules defined to create our model, which will act as blue print to build our documents
 // schema (set of rules) => model (blue print to build a document) => document (actual data structure)
@@ -133,6 +133,7 @@ const tourSchema = new mongoose.Schema(
         day: Number,
       },
     ],
+    guides: Array,
   },
   {
     // schema option to show virtual properties when the model is in the form of JSON or object
@@ -154,6 +155,20 @@ tourSchema.virtual('durationWeeks').get(function () {
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true }); // slugify and shows the document's name
   console.log(this.slug);
+  next();
+});
+
+// we're just gonna use user ids as tour guides to create each tour
+// so basically what we're doing here is, finding the real user data
+// and use it in the place of user ids we put in
+tourSchema.pre('save', async function (next) {
+  // map will push each element to a new array and we made it's callback an async
+  // so, new array is an aray full of promises
+  const guidePromises = this.guides.map(
+    async (userId) => await User.findById(userId),
+  );
+  this.guides = await Promise.all(guidePromises); // resolve promises and assign it to guides array
+
   next();
 });
 
