@@ -105,6 +105,7 @@ const tourSchema = new mongoose.Schema(
       // we need to use type as an object because it simply cant be plain String or Number,
       // it's a geospatial data and it's type should be Point
       // that's why we need to nest another type inside
+      // so, what make an object GeoJSON in the schema are type and coordinate fields
       type: {
         type: String,
         // we can specify multiple geometries like polygons, lines in MongoDB
@@ -133,7 +134,15 @@ const tourSchema = new mongoose.Schema(
         day: Number,
       },
     ],
-    guides: Array,
+    guides: [
+      // make a reference to the relevant document of the entity we referred as ref
+      // so this is only a reference in the database, but if we want to see
+      // the referenced data as embedded, we just need to add .popluate('guides') in the query
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User', // establish entity reference
+      },
+    ],
   },
   {
     // schema option to show virtual properties when the model is in the form of JSON or object
@@ -158,19 +167,20 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+// Embedding approach for tour guides in each tour
 // we're just gonna use user ids as tour guides to create each tour
 // so basically what we're doing here is, finding the real user data
 // and use it in the place of user ids we put in
-tourSchema.pre('save', async function (next) {
-  // map will push each element to a new array and we made it's callback an async
-  // so, new array is an aray full of promises
-  const guidePromises = this.guides.map(
-    async (userId) => await User.findById(userId),
-  );
-  this.guides = await Promise.all(guidePromises); // resolve promises and assign it to guides array
+// tourSchema.pre('save', async function (next) {
+//   // map will push each element to a new array and we made it's callback an async
+//   // so, new array is an aray full of promises
+//   const guidePromises = this.guides.map(
+//     async (userId) => await User.findById(userId),
+//   );
+//   this.guides = await Promise.all(guidePromises); // resolve promises and assign it to guides array
 
-  next();
-});
+//   next();
+// });
 
 // // demo of document middleware pipeline
 // tourSchema.pre('save', function(next) {
@@ -192,8 +202,29 @@ tourSchema.pre('save', async function (next) {
 // use regex to make sure the middleware is working for both find and findOne queries
 // ^find literally means all the queries start with find
 tourSchema.pre(/^find/, function (next) {
+  // in query middleware, 'this' always points to the current query
   this.find({ secretTour: { $ne: true } }); // only shows non-secret tours
   this.start = Date.now();
+  next();
+});
+
+// populate guide references to all the queries starting with find
+tourSchema.pre(/^find/, function (next) {
+  // populate method populates the referenced ids in the db with actual data they're referencing
+  // one thing to keep in mind is that behind the scenes, using populate will make an additional query
+  // to the database, so it might effect your app's performance
+  this.populate({
+    path: 'guides', // the field we want to populate
+    select: '-__v', // specify to not show the __v field in referenced user document
+  });
+
+  next();
+});
+
+// MongoDB Aggregation Middleware
+tourSchema.pre('aggregate', function (next) {
+  // add another match to  filter out aggregated object pipeline method's secret tours
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
   next();
 });
 
@@ -202,13 +233,6 @@ tourSchema.post(/^find/, function (docs, next) {
   // calculate how long it takes to execute current query
   console.log(`Query took ${Date.now() - this.start} milliseconds`);
   // console.log(docs);
-  next();
-});
-
-// MongoDB Aggregation Middleware
-tourSchema.pre('aggregate', function (next) {
-  // add another match to  filter out aggregated object pipeline method's secret tours
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
   next();
 });
 
