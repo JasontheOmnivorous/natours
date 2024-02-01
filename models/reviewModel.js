@@ -33,13 +33,19 @@ const reviewSchema = new mongoose.Schema(
 );
 
 reviewSchema.pre(/^find/, function (next) {
-  this.populate({ path: 'tour', select: '-__v' });
+  // how we can populate multiple fields
+  // this.populate({
+  //   path: 'tour',
+  //   select: 'name',
+  // }).populate({
+  //   path: 'user',
+  //   select: 'name photo',
+  // });
 
-  next();
-});
-
-reviewSchema.pre(/^find/, function (next) {
-  this.populate({ path: 'user', select: '-__v' });
+  this.populate({
+    path: 'user',
+    select: 'name photo',
+  });
 
   next();
 });

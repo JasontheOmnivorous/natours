@@ -159,6 +159,17 @@ tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7; // calculate duration in weeks
 });
 
+// when we do parent referencing, the parent doesnt know about it's children
+// since only the children are the ones pointing their parent
+// so, when we want to know the referencing children from the parent,
+// we can use virtual populate
+// think of this as a connection between two data sets without persisting it in the db
+tourSchema.virtual('reviews', {
+  ref: 'Review', // referencing child model
+  foreignField: 'tour', // the field in the child that's referencing the parent
+  localField: '_id', // the field in the parent that's being referenced
+});
+
 // MongoDB Document middleware that runs before .save() and .create()
 // pre save hook
 tourSchema.pre('save', function (next) {

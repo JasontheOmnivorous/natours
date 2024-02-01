@@ -63,7 +63,9 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 exports.getTour = catchAsync(async (req, res, next) => {
   // findById method is the another more efficient way to query search with find method and filter object in it
   // Tour.findOne({ _id: req.params.id }) => findById(req.params.id)
-  const tour = await Tour.findById(req.params.id);
+  // after setting up virtual connection between Tour and Review,
+  // all we need is to use populate on that virtual field
+  const tour = await Tour.findById(req.params.id).populate('reviews');
 
   if (!tour) {
     // used return to avoid running codes below and send inappropriate messages
