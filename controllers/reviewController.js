@@ -2,7 +2,14 @@ const Review = require('./../models/reviewModel');
 const catchAsync = require('./../utils/catchAsync');
 
 exports.getAllReview = catchAsync(async (req, res, next) => {
-  const reviews = await Review.find();
+  let filter = {};
+  // when there's tourId in request params,
+  // query will find only reviews that are specific to that tourId
+  // if not, the object's gonna be undefined and
+  // the query will simply find all the reviews
+  if (req.params.tourId) filter = { tour: req.params.tourId };
+
+  const reviews = await Review.find(filter);
 
   res.status(200).json({
     status: 'success',
