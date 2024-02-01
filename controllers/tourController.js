@@ -1,8 +1,8 @@
-const { query } = require('express');
 const Tour = require('./../models/tourModel');
 const APIFeatures = require('./../utils/apiFeatures');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const factory = require('./handlerFactory');
 
 exports.aliasTopTours = (req, res, next) => {
   // manipulate the query object in the middleware, so that it's already different when it reaches the getAllTours
@@ -111,20 +111,22 @@ exports.updateTour = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
+// exports.deleteTour = catchAsync(async (req, res, next) => {
+//   const tour = await Tour.findByIdAndDelete(req.params.id);
 
-  if (!tour) {
-    // used return to avoid running codes below and send inappropriate messages
-    return next(new AppError('No tours found with that ID.', 404));
-  }
+//   if (!tour) {
+//     // used return to avoid running codes below and send inappropriate messages
+//     return next(new AppError('No tours found with that ID.', 404));
+//   }
 
-  // 204 means no content
-  res.status(204).json({
-    status: 'success',
-    data: null,
-  });
-});
+//   // 204 means no content
+//   res.status(204).json({
+//     status: 'success',
+//     data: null,
+//   });
+// });
+
+exports.deleteTour = factory.deleteOne(Tour);
 
 // Aggregation pipelines hanndler function
 exports.getTourStats = catchAsync(async (req, res, next) => {
