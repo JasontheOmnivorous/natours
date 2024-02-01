@@ -12,6 +12,7 @@ const {
   getSlug,
 } = require('./../controllers/tourController');
 const { protect, restrictTo } = require('./../controllers/authController');
+const { createReview } = require('../controllers/reviewController');
 const router = express.Router(); // create mount router for tours
 
 // // param middleware => a middleware that only runs for certain parameter in the URL
@@ -39,5 +40,12 @@ router
   .get(getTour)
   .patch(updateTour)
   .delete(protect, restrictTo('admin', 'lead-guide'), deleteTour);
+
+// POST => /tour/bfeuwg812e28/reviews
+// GET => /tour/bfeuwg812e28/reviews
+// GET => /tour/bfeuwg812e28/reviews/kjnueiwh39
+router
+  .route('/:tourId/reviews')
+  .post(protect, restrictTo('user'), createReview);
 
 module.exports = router; // export our tour route
