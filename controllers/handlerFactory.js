@@ -33,3 +33,19 @@ exports.updateOne = (Model) => {
     });
   });
 };
+
+exports.createOne = (Model) => {
+  return catchAsync(async (req, res, next) => {
+    const newDocument = await Model.create(req.body);
+
+    if (!newDocument)
+      return next(new AppError(`Fail to create new ${Model}.`, 400));
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        data: newDocument,
+      },
+    });
+  });
+};

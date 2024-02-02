@@ -26,23 +26,7 @@ exports.getUser = catchAsync(async (req, res) => {
   });
 });
 
-exports.createUser = catchAsync(async (req, res) => {
-  const { name, email, password, passwordConfirm } = req.body;
-
-  const newUser = await User.create({
-    name,
-    email,
-    password,
-    passwordConfirm,
-  });
-
-  if (!newUser) return next(new AppError('Fail to create new user.', 400));
-
-  res.status(201).json({
-    status: 'success',
-    newUser,
-  });
-});
+exports.createUser = factory.createOne(User);
 
 exports.updateUser = factory.updateOne(User);
 
