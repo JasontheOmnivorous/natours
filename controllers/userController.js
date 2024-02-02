@@ -44,19 +44,7 @@ exports.createUser = catchAsync(async (req, res) => {
   });
 });
 
-exports.updateUser = catchAsync(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!user) return next(new AppError('No users found with that id.', 400));
-
-  res.status(200).json({
-    status: 'success',
-    user,
-  });
-});
+exports.updateUser = factory.updateOne(User);
 
 exports.deleteUser = factory.deleteOne(User);
 
