@@ -17,16 +17,14 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getUser = catchAsync(async (req, res) => {
-  const user = await User.findById(req.params.id);
+exports.getUser = factory.getOne(User);
 
-  res.status(200).json({
-    status: 'success',
-    user,
+exports.createUser = (req, res, next) => {
+  res.status(404).json({
+    status: 'fail',
+    message: 'This route is not defined! Please use /signup endpoint instead.',
   });
-});
-
-exports.createUser = factory.createOne(User);
+};
 
 exports.updateUser = factory.updateOne(User);
 
