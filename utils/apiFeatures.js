@@ -21,11 +21,10 @@ class APIFeatures {
 
   sort() {
     if (this.queryString.sort) {
-      // sorting works but what if two or more documents have the same value of our criteria to sort? like same price
-      // we should use another category to sort
-      // we can do it like sort('price ratingsAverage)
-      // but we should use commas for the queries in the actual URL
-      // we cant be using spaces, that will lead to confusion
+      // sorting actually works like this in query:
+      // https://natours.io/api/v1/tours?sort=price ratingsAverage
+      // so, we wanna use spaces to avoid awkwardness of using spaces
+      // that's why we're splitting here
       const sortBy = this.queryString.sort.split(',').join(' '); // split with commas and join with spaces back
       // mongoose will automatically sort the query in ascending order by sort's value
       this.query = this.query.sort(sortBy); // we can sort in descending order by putting minus in front of value in the query
