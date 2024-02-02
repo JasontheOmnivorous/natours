@@ -1,7 +1,5 @@
 const Tour = require('./../models/tourModel');
-const APIFeatures = require('./../utils/apiFeatures');
 const catchAsync = require('./../utils/catchAsync');
-const AppError = require('./../utils/appError');
 const factory = require('./handlerFactory');
 
 exports.aliasTopTours = (req, res, next) => {
@@ -12,74 +10,15 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-// // parse the raw JSON file which is a string after reading, into a JS array with objects
-// const tours = JSON.parse(
-//     fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
-// );
-
-// // instead of checking if the id is valid or not again and again, we just use a middleware at the start
-// // val is the value of id we put in the request URL param
-// exports.checkId = (req, res, next, val) => {
-//     if (req.params.id * 1 > tours.length) return res.status(404).json({
-//         status: "failed",
-//         message: "Invalid id"
-//     });
-//     next();
-// }
-
-// exports.checkBody = (req, res, next) => {
-//     if (!req.body.name || !req.body.price) {
-//         // this return in the middlware is extremely important and if we didnt add that, other middlwares will keep running
-//         return res.status(400).send({
-//             status: "failed",
-//             message: "Missing name or price"
-//         })
-//     }
-//     next();
-// }
-
 // 2) route handlers/route controllers
 // refactor the code to be a bit cleaner
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  // EXECUTE QUERY
-  const features = new APIFeatures(Tour.find(), req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate(); // chain the methods, in other words, apply all the features to the model
-  const tours = await features.query;
-
-  // SEND RESPONSE
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requestTime, // use the data pass through middleware stack or pipeline
-    totalTours: tours.length,
-    data: {
-      tours,
-    },
-  });
-});
+exports.getAllTours = factory.getAll(Tour);
 
 exports.getTour = factory.getOne(Tour, { path: 'reviews' });
 
 exports.createTour = factory.createOne(Tour);
 
 exports.updateTour = factory.updateOne(Tour);
-
-// exports.deleteTour = catchAsync(async (req, res, next) => {
-//   const tour = await Tour.findByIdAndDelete(req.params.id);
-
-//   if (!tour) {
-//     // used return to avoid running codes below and send inappropriate messages
-//     return next(new AppError('No tours found with that ID.', 404));
-//   }
-
-//   // 204 means no content
-//   res.status(204).json({
-//     status: 'success',
-//     data: null,
-//   });
-// });
 
 exports.deleteTour = factory.deleteOne(Tour);
 

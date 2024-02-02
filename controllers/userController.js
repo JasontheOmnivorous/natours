@@ -5,17 +5,7 @@ const { filterObj } = require('./../utils/helpers');
 const factory = require('./handlerFactory');
 
 // route handlers/controllers for users
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
-
-  res.status(200).json({
-    status: 'success',
-    totalUsers: users.length,
-    data: {
-      users,
-    },
-  });
-});
+exports.getAllUsers = factory.getAll(User);
 
 exports.getUser = factory.getOne(User);
 
